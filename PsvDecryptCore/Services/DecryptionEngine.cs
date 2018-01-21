@@ -19,11 +19,13 @@ namespace PsvDecryptCore.Services
         private readonly LoggingService _loggingService;
         private readonly PsvInformation _psvInformation;
         private readonly StringProcessor _stringProcessor;
+        private readonly Config _config;
 
         public DecryptionEngine(PsvInformation psvInformation, LoggingService loggingService,
-            StringProcessor stringProcessor)
+            StringProcessor stringProcessor, Config config)
         {
             _stringProcessor = stringProcessor;
+            _config = config;
             _psvInformation = psvInformation;
             _loggingService = loggingService;
         }
@@ -119,6 +121,7 @@ namespace PsvDecryptCore.Services
         private Task BuildSubtitlesAsync(IEnumerable<ClipTranscript> transcripts, string srtOutput,
             string srtName)
         {
+            if (_config.Subtitle.HasSuffix) srtName = srtName + _config.Subtitle.Suffix;
             var clipTranscripts = transcripts as IList<ClipTranscript> ?? transcripts.ToList();
             if (!clipTranscripts.Any()) return Task.CompletedTask;
             var transcriptBuilder = new StringBuilder();

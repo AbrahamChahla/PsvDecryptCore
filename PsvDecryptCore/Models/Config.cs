@@ -6,7 +6,7 @@ namespace PsvDecryptCore.Models
 {
     public class Config
     {
-        public Subtitle Subtitle { get; set; }
+        public Subtitle Subtitle { get; set; } = new Subtitle();
     }
 
     public class Subtitle

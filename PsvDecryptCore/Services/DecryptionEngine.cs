@@ -131,6 +131,10 @@ namespace PsvDecryptCore.Services
             int lineCount = 0;
             foreach (var transcript in clipTranscripts)
             {
+                if (transcript.StartTime > TimeSpan.MaxValue.TotalMilliseconds)
+                    transcript.StartTime = 0;
+                if (transcript.EndTime > TimeSpan.MaxValue.TotalMilliseconds)
+                    transcript.EndTime = 0;
                 lineCount++;
                 transcriptBuilder.AppendLine(lineCount.ToString());
                 string startTime = TimeSpan.FromMilliseconds(transcript.StartTime).ToString(@"hh\:mm\:ss");

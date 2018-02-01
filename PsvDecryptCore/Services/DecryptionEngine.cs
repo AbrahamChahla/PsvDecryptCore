@@ -50,7 +50,7 @@ namespace PsvDecryptCore.Services
                         continue;
                     }
 
-                    if (!Directory.Exists(courseOutput)) Directory.CreateDirectory(courseOutput);
+                    if (!Directory.Exists(courseOutput)) courseOutput = Directory.CreateDirectory(courseOutput).FullName;
 
                     // Course image copy
                     await CopyCourseImageAsync(courseSource, courseOutput).ConfigureAwait(false);

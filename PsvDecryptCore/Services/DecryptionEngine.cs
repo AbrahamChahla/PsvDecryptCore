@@ -72,7 +72,7 @@ namespace PsvDecryptCore.Services
                         string moduleOutput = Path.Combine(courseOutput,
                             $"{_stringProcessor.TitleToFileIndex(module.ModuleIndex)}. {_stringProcessor.SanitizeTitle(module.Title)}");
                         string moduleSource = Path.Combine(courseSource, moduleHash);
-                        if (!Directory.Exists(moduleOutput)) Directory.CreateDirectory(moduleOutput);
+                        if (!Directory.Exists(moduleOutput)) moduleOutput = Directory.CreateDirectory(moduleOutput).FullName;
 
                         // Write module info
                         await WriteModuleInfoAsync(module, moduleOutput).ConfigureAwait(false);

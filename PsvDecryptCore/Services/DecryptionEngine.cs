@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using PsvDecryptCore.Common;
 using PsvDecryptCore.Models;
 
 namespace PsvDecryptCore.Services
@@ -67,7 +66,8 @@ namespace PsvDecryptCore.Services
                     {
                         // Preps
                         _loggingService.Log(LogLevel.Information, $"Processing module: {module.Name}...");
-                        string moduleHash = await Task.Run(() => GetModuleHash(module.Name, module.AuthorHandle))
+                        string moduleHash = await Task
+                            .Run(() => DecryptionHelper.GetModuleHash(module.Name, module.AuthorHandle))
                             .ConfigureAwait(false);
                         string moduleOutput = Path.Combine(courseOutput,
                             $"{_stringProcessor.TitleToFileIndex(module.ModuleIndex)}. {_stringProcessor.SanitizeTitle(module.Title)}");
@@ -117,7 +117,7 @@ namespace PsvDecryptCore.Services
         }
 
         /// <summary>
-        ///     Builds the <see cref="ClipTranscript" /> to SRT file.
+        ///     Builds the <see cref="ClipTranscript" /> to an SRT file.
         /// </summary>
         private Task BuildSubtitlesAsync(IEnumerable<ClipTranscript> transcripts, string srtOutput,
             string srtName)
@@ -152,18 +152,6 @@ namespace PsvDecryptCore.Services
         }
 
         /// <summary>
-        ///     Gets the required module hash for course directory name.
-        /// </summary>
-        private static string GetModuleHash(string name, string authorHandle)
-        {
-            using (var md5 = MD5.Create())
-            {
-                return Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(name + "|" + authorHandle)))
-                    .Replace('/', '_');
-            }
-        }
-
-        /// <summary>
         ///     Decrypts the selected file.
         /// </summary>
         private async Task DecryptFileAsync(string srcFile, string destFile)
@@ -173,16 +161,8 @@ namespace PsvDecryptCore.Services
                 _loggingService.Log(LogLevel.Warning, $"Invalid source file {srcFile}, skipping...");
                 return;
             }
-
-            using (var input = new VirtualFileStream(srcFile))
-            using (var output = new FileStream(destFile, FileMode.Create, FileAccess.Write, FileShare.None, 128000,
-                FileOptions.Asynchronous | FileOptions.SequentialScan))
-            {
-                output.SetLength(0);
-                var buffer = await input.ReadAsync().ConfigureAwait(false);
-                await output.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                _loggingService.Log(LogLevel.Information, $"Decrypted clip {Path.GetFileName(destFile)}.");
-            }
+            await DecryptionHelper.DecryptFileAsync(srcFile, destFile).ConfigureAwait(false);
+            _loggingService.Log(LogLevel.Information, $"Decrypted clip {Path.GetFileName(destFile)}.");
         }
 
         /// <summary>
@@ -212,6 +192,11 @@ namespace PsvDecryptCore.Services
             _loggingService.Log(LogLevel.Debug, $"Course image already exists at {imageOutput}, skipping...");
         }
 
+        /// <summary>
+        ///     Writes course information to <paramref name="courseOutput" />.
+        /// </summary>
+        /// <param name="courseInfo">The model containing the course information.</param>
+        /// <param name="courseOutput">The output filepath.</param>
         private Task WriteCourseInfoAsync(Course courseInfo, string courseOutput)
         {
             string serializedOutput = JsonConvert.SerializeObject(courseInfo, Formatting.Indented);
@@ -226,7 +211,12 @@ namespace PsvDecryptCore.Services
             _loggingService.Log(LogLevel.Warning, "Invalid course info, skipping...");
             return Task.CompletedTask;
         }
-
+        
+        /// <summary>
+        ///     Writes module information to <paramref name="moduleOutput" />.
+        /// </summary>
+        /// <param name="moduleInfo">The model containing the module information.</param>
+        /// <param name="moduleOutput">The output filepath.</param>
         private Task WriteModuleInfoAsync(Module moduleInfo, string moduleOutput)
         {
             string serializedOutput = JsonConvert.SerializeObject(moduleInfo, Formatting.Indented);
